@@ -1,0 +1,85 @@
+# Scheduled refresh for the Alkanes AMM Radar static snapshot.
+#
+# WHY THIS EXISTS
+#   GitHub Pages serves static files only, so the radar cannot run its sweep
+#   loop there. This job runs the sweep on a schedule, commits the rendered
+#   snapshot into docs/, and Pages serves it.
+#
+# WHY THIS REPO IS PUBLIC
+#   Actions minutes are free for public repositories. This job runs every 20
+#   minutes; on a private repo that would consume roughly 2,900 billable
+#   minutes a month from the account allowance, which could starve the
+#   scheduled builds of the operator's other private Pages projects. Public
+#   removes that contention entirely.
+#
+# STATE IS COMMITTED ON PURPOSE
+#   docs/data/ holds the accumulating confirmed-swap window, the open
+#   predictions, and the scored history. Committing it is what lets the
+#   scoreboard and the flow window survive between runs - each run is a fresh
+#   process with no memory of the last.
+#
+# LOOP SAFETY
+#   The commit carries [skip ci] and the workflow has no `push` trigger, so
+#   committing the snapshot cannot retrigger the workflow.
+
+name: refresh radar
+
+on:
+  schedule:
+    # Every 20 minutes. GitHub delays cron under load; the page's staleness
+    # banner surfaces that rather than pretending the data is fresh.
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+# Never let a slow run overlap the next tick; a second concurrent sweep would
+# race on docs/data and could commit a torn window.
+concurrency:
+  group: refresh-radar
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        # certifi is the only third-party requirement: the runner needs an
+        # explicit CA bundle for the gateway TLS handshake.
+        run: python -m pip install --upgrade certifi
+
+      - name: Unit tests
+        # A broken decoder or swap-math regression must never be published.
+        run: python -m unittest discover -s tests
+
+      - name: Build snapshot
+        run: |
+          python build_site.py \
+            --backfill 60 \
+            --horizon 1 \
+            --max-fetch 6500 \
+            --workers 12 \
+            --window 144
+
+      - name: Commit snapshot
+        run: |
+          git config user.name  "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add docs
+          if git diff --staged --quiet; then
+            echo "no change"
+          else
+            git commit -m "radar snapshot $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+            # Another run may have landed while we were sweeping; rebase rather
+            # than force, so a concurrent snapshot is never discarded.
+            git pull --rebase --autostash origin main || true
+            git push
+          fi

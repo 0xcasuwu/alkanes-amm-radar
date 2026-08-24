@@ -1,0 +1,359 @@
+<!doctype html>
+<!--
+  radar/dash.html - the alkanes AMM radar dashboard.
+
+  FOCUS (set by the operator, 2026-08-24): price action as a consequence of AMM
+  PURCHASES. DIESEL issuance stays on the page as a secondary panel because it
+  is a real and much larger flow, but it is no longer the headline.
+
+  THE STRUCTURAL PROBLEM THIS LAYOUT SOLVES
+    Mainnet AMM swaps are sparse - measured ~0.6 per block, and a given mempool
+    sample often contains ZERO. A page that only rendered pending swaps would
+    be blank most of the time and look broken. So the hero degrades in a
+    defined order:
+      pending swaps exist   -> show projected pool moves (the forecast)
+      none pending          -> show confirmed flow over the rolling window
+                               (what AMM purchases already did)
+    Both are real answers to "what are AMM purchases doing to price"; only the
+    first is a prediction.
+
+  ONE TEMPLATE, TWO DEPLOYMENTS
+    Live daemon: data comes from /api/state (fresh every sweep).
+    Static Pages: /api/state does not exist, so we fall back to ./state.json,
+    a snapshot committed by the scheduled workflow. The staleness banner is
+    driven off generated_at, so a stale snapshot announces itself instead of
+    quietly looking live. This matters far more on Pages than on localhost.
+
+  EPISTEMICS
+    Every number is decoded INTENT (what a tx asks the VM to do), never
+    execution truth. Confirmed-flow shows volume and direction only - we do NOT
+    show realized historical price impact, because historical reserves are not
+    readable on the public gateway (alkanes_simulate ignores its height param).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alkanes AMM Radar</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#121820; --panel2:#161d27; --line:#1f2a37;
+    --txt:#e6edf3; --dim:#8b98a5; --accent:#4cc2ff; --good:#3fb950;
+    --bad:#f85149; --warn:#d29922; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  header{padding:14px 20px;border-bottom:1px solid var(--line);
+    display:flex;gap:22px;align-items:baseline;flex-wrap:wrap;position:sticky;top:0;
+    background:rgba(11,15,20,.94);backdrop-filter:blur(8px);z-index:5}
+  h1{font-size:15px;margin:0;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  .stat{font:12px var(--mono);color:var(--dim)}
+  .stat b{color:var(--txt);font-weight:600}
+  main{padding:20px;display:grid;gap:16px;max-width:1500px;margin:0 auto}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .grid.wide{grid-template-columns:repeat(auto-fit,minmax(560px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h2{margin:0 0 12px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .hero{background:linear-gradient(135deg,#121820,#0f1a24)}
+  .big{font:600 40px/1.05 var(--mono);letter-spacing:-.02em}
+  .mid{font:600 22px/1.1 var(--mono)}
+  .sub{color:var(--dim);font:12px var(--mono);margin-top:6px}
+  .row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-end}
+  .delta{font:600 18px var(--mono)}
+  .up{color:var(--good)} .down{color:var(--bad)} .flat{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font:12px var(--mono)}
+  th{text-align:left;color:var(--dim);font-weight:500;padding:6px 8px;
+    border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:6px 8px;border-bottom:1px solid rgba(31,42,55,.5);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right}
+  .tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10px;
+    background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+  .bar{height:5px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:10px}
+  .bar>i{display:block;height:100%;background:var(--accent)}
+  .muted{color:var(--dim)}
+  .warnbox{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.35);
+    color:var(--warn);padding:9px 13px;border-radius:8px;font:12px var(--mono)}
+  footer{padding:16px 20px 40px;color:var(--dim);font-size:12px;max-width:1500px;margin:0 auto}
+  .scroll{overflow-x:auto}
+  .empty{color:var(--dim);font-style:italic;padding:6px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Alkanes AMM Radar</h1>
+  <div class="stat">tip <b id="tip">-</b></div>
+  <div class="stat">projecting <b id="next">-</b></div>
+  <div class="stat">mempool <b id="mp">-</b></div>
+  <div class="stat">coverage <b id="cov">-</b></div>
+  <div class="stat">data <b id="age">-</b></div>
+</header>
+<main>
+  <div id="warn"></div>
+
+  <section class="card hero">
+    <h2>AMM purchase pressure &mdash; next block</h2>
+    <div id="heroBody"></div>
+    <div class="bar"><i id="covbar" style="width:0%"></i></div>
+    <div class="sub" id="heroNote"></div>
+  </section>
+
+  <div class="grid wide">
+    <section class="card">
+      <h2>Projected pool moves (pending swaps applied)</h2>
+      <div class="scroll"><table id="poolTbl">
+        <thead><tr><th>Pool</th><th class="num">Price now</th><th class="num">Projected</th><th class="num">Change</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div id="poolEmpty" class="empty"></div>
+    </section>
+
+    <section class="card">
+      <h2>Pending swaps in mempool</h2>
+      <div class="scroll"><table id="swapTbl">
+        <thead><tr><th>Tx</th><th>Path</th><th class="num">In</th><th class="num">Out</th><th>Status</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div id="swapEmpty" class="empty"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Confirmed AMM flow &mdash; rolling window</h2>
+    <div class="scroll"><table id="flowTbl">
+      <thead><tr>
+        <th>Pair</th><th class="num">Swaps</th><th class="num">First-hop volume in</th>
+        <th>Mostly sold</th><th class="num">Last seen</th>
+      </tr></thead><tbody></tbody></table></div>
+    <div id="flowEmpty" class="empty"></div>
+    <div class="sub" id="flowNote"></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>DIESEL issuance (secondary)</h2>
+      <div class="row">
+        <div><div class="mid" id="perMint">-</div><div class="sub">DIESEL per mint if block seals now</div></div>
+        <div><div class="delta" id="perMintDelta">-</div><div class="sub">vs last block</div></div>
+        <div><div class="delta" id="mints">-</div><div class="sub">mints competing</div></div>
+      </div>
+      <div class="sub" id="dieselNote"></div>
+    </section>
+
+    <section class="card">
+      <h2>frBTC supply flow</h2>
+      <div class="row">
+        <div><div class="mid" id="wraps">-</div><div class="sub">wraps</div></div>
+        <div><div class="mid" id="unwraps">-</div><div class="sub">unwraps</div></div>
+        <div><div class="delta" id="netdir">-</div><div class="sub">net pressure</div></div>
+      </div>
+      <div class="sub" id="unwrapAmt"></div>
+    </section>
+
+    <section class="card">
+      <h2>Intent census (horizon)</h2>
+      <div class="scroll"><table id="censusTbl">
+        <thead><tr><th>Intent</th><th class="num">Count</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Prediction scoreboard &mdash; predicted vs mined</h2>
+    <div class="scroll"><table id="histTbl">
+      <thead><tr>
+        <th>Height</th><th class="num">Mints pred</th><th class="num">Mints actual</th>
+        <th class="num">Error</th><th class="num">DIESEL/mint actual</th>
+        <th class="num">Fees (sats)</th><th class="num">AMM swaps</th>
+      </tr></thead><tbody></tbody></table></div>
+    <div id="accuracy" class="sub"></div>
+  </section>
+</main>
+<footer>
+  Every figure is decoded from raw Bitcoin bytes and describes what transactions
+  <b>request</b> of the alkanes VM &mdash; an upper bound on outcome. Swaps revert on slippage
+  or deadline; edicts clamp to available balance. Block ordering is approximated by ancestor
+  fee rate, and private relays are invisible to a public mempool. Confirmed flow reports
+  volume and direction only: historical pool reserves are not readable on the public gateway,
+  so realized price impact is deliberately not shown.
+</footer>
+<script>
+const fmt = (n,d=0)=> n===null||n===undefined||isNaN(n) ? "-" :
+  Number(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct = n => n===null||n===undefined||isNaN(n) ? "-" : (n>=0?"+":"")+n.toFixed(3)+"%";
+const cls = n => n===null||n===undefined||isNaN(n) ? "flat" : (n>0?"up":(n<0?"down":"flat"));
+const short = t => t ? t.slice(0,10) : "-";
+const ago = s => { s=Math.max(0,Math.round(s));
+  if(s<90) return s+"s ago"; if(s<5400) return Math.round(s/60)+"m ago";
+  return (s/3600).toFixed(1)+"h ago"; };
+
+// Live daemon first, static snapshot second. See header comment.
+async function load(){
+  try{
+    const r = await fetch("/api/state",{cache:"no-store"});
+    if(r.ok) return await r.json();
+  }catch(e){}
+  const r2 = await fetch("./state.json",{cache:"no-store"});
+  return await r2.json();
+}
+
+function renderHero(s){
+  const amm = s.amm||{}, body=document.getElementById("heroBody"),
+        note=document.getElementById("heroNote");
+  const moves = (amm.pools||[]);
+  if(moves.length){
+    const top = moves[0];
+    body.innerHTML =
+      '<div class="row"><div><div class="big '+cls(top.change_pct)+'">'+pct(top.change_pct)+'</div>'
+      + '<div class="sub">'+top.symbol_a+' / '+top.symbol_b+' &mdash; largest projected move</div></div>'
+      + '<div><div class="delta">'+fmt(amm.executing)+'</div><div class="sub">swaps executing</div></div>'
+      + '<div><div class="delta">'+fmt(amm.reverting)+'</div><div class="sub">predicted reverts</div></div>'
+      + '<div><div class="delta">'+fmt(moves.length)+'</div><div class="sub">pools moved</div></div></div>';
+    note.textContent = "Pending swaps applied in projected block order against live reserves ("
+      + Math.round(amm.reserves_age_sec||0)+"s old).";
+  } else {
+    const f = (s.flow&&s.flow.pairs)||[];
+    const w = s.flow||{};
+    const tot = f.reduce((a,x)=>a+x.swaps,0);
+    body.innerHTML =
+      '<div class="row"><div><div class="big flat">0</div>'
+      + '<div class="sub">AMM swaps pending right now</div></div>'
+      + '<div><div class="delta">'+fmt(tot)+'</div><div class="sub">confirmed in last '
+      + fmt(w.blocks_scanned)+' blocks</div></div>'
+      + '<div><div class="delta">'+fmt(f.length)+'</div><div class="sub">pairs active</div></div></div>';
+    note.textContent = "No AMM purchase is queued. Mainnet averages well under one swap per "
+      + "block, so an empty mempool is the normal state - the confirmed window below is the "
+      + "live picture of AMM-driven price action.";
+  }
+}
+
+async function tick(){
+  let s;
+  try { s = await load(); } catch(e){ return; }
+
+  const warn = document.getElementById("warn");
+  if(s.status === "warming"){
+    warn.innerHTML = '<div class="warnbox">Warming up &mdash; first sweep in progress.</div>';
+    return;
+  }
+  const age = Date.now()/1000 - s.generated_at;
+  let banner = "";
+  if(s.error) banner += String(s.error).slice(0,300)+" ";
+  if(age > 900) banner += "Snapshot is "+ago(age)+". Pending-mempool figures describe a block "
+    + "that has almost certainly already been mined; treat the confirmed-flow panel as the "
+    + "current view.";
+  warn.innerHTML = banner ? '<div class="warnbox">'+banner+'</div>' : "";
+
+  document.getElementById("tip").textContent  = fmt(s.tip);
+  document.getElementById("next").textContent = fmt(s.next_height);
+  document.getElementById("mp").textContent   = fmt(s.mempool_size);
+  document.getElementById("cov").textContent  = (s.coverage*100).toFixed(1)+"%";
+  document.getElementById("age").textContent  = ago(age);
+  document.getElementById("covbar").style.width = (s.coverage*100).toFixed(1)+"%";
+
+  renderHero(s);
+
+  // ---- projected pool moves ----
+  const amm = s.amm||{};
+  const pb = document.querySelector("#poolTbl tbody"); pb.innerHTML="";
+  (amm.pools||[]).forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = "<td>"+p.symbol_a+" / "+p.symbol_b+" <span class='tag'>"+p.pool_id+"</span></td>"
+      + "<td class='num'>"+p.price_before.toPrecision(6)+"</td>"
+      + "<td class='num'>"+p.price_after.toPrecision(6)+"</td>"
+      + "<td class='num "+cls(p.change_pct)+"'>"+pct(p.change_pct)+"</td>";
+    pb.appendChild(tr);
+  });
+  document.getElementById("poolEmpty").textContent =
+    (amm.pools&&amm.pools.length) ? "" :
+    (amm.available===false ? "Pool reserve data unavailable this run."
+                           : "No pending swap touches a known pool.");
+
+  // ---- pending swaps ----
+  const sb = document.querySelector("#swapTbl tbody"); sb.innerHTML="";
+  (amm.swaps||[]).slice(0,25).forEach(sw=>{
+    const st = sw.will_execute ? "<span class='up'>executes</span>"
+      : (sw.honors_min_out===false ? "<span class='down'>reverts (min_out)</span>"
+      : "<span class='muted'>"+(sw.reason||"n/a")+"</span>");
+    const tr=document.createElement("tr");
+    tr.innerHTML = "<td>"+short(sw.txid)+"</td><td>"+sw.path.join(" &rarr; ")+"</td>"
+      + "<td class='num'>"+fmt(sw.amount_in)+"</td>"
+      + "<td class='num'>"+fmt(sw.amount_out)+"</td><td>"+st+"</td>";
+    sb.appendChild(tr);
+  });
+  document.getElementById("swapEmpty").textContent =
+    (amm.swaps&&amm.swaps.length) ? "" : "Nothing queued.";
+
+  // ---- confirmed flow ----
+  const flow = s.flow||{};
+  const fb=document.querySelector("#flowTbl tbody"); fb.innerHTML="";
+  (flow.pairs||[]).forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = "<td>"+p.symbol_a+" / "+p.symbol_b+"</td>"
+      + "<td class='num'>"+fmt(p.swaps)+"</td>"
+      + "<td class='num'>"+fmt(p.first_hop_volume_in)+"</td>"
+      + "<td>"+p.dominant_sell_symbol+"</td>"
+      + "<td class='num'>"+fmt(p.last_height)+"</td>";
+    fb.appendChild(tr);
+  });
+  document.getElementById("flowEmpty").textContent =
+    (flow.pairs&&flow.pairs.length) ? "" : "No confirmed AMM swaps in the window.";
+  document.getElementById("flowNote").textContent =
+    "Window: blocks "+fmt(flow.from_height)+"-"+fmt(flow.to_height)+" ("+fmt(flow.blocks_scanned)
+    +" blocks, "+fmt(flow.total_swaps)+" swaps). Volume is first-hop amount-in only; downstream "
+    +"hop sizes need historical reserves, which the gateway does not expose.";
+
+  // ---- DIESEL (secondary) ----
+  const d = s.diesel;
+  if(d){
+    const p = d.projection;
+    document.getElementById("perMint").textContent = p.value_per_mint_display.toFixed(8);
+    const dl = document.getElementById("perMintDelta");
+    dl.textContent = pct(d.change_pct); dl.className = "delta "+cls(d.change_pct);
+    document.getElementById("mints").textContent = fmt(d.mints_estimated);
+    document.getElementById("dieselNote").textContent =
+      "Pro-rata split of "+fmt(p.block_reward)+" base units minus "+fmt(p.diesel_fee)
+      +" fee drag. Highest right after a block, falls as the mint queue refills.";
+  }
+
+  // ---- frBTC ----
+  const f = s.frbtc||{};
+  document.getElementById("wraps").textContent = fmt(f.wraps);
+  document.getElementById("unwraps").textContent = fmt(f.unwraps);
+  const nd=document.getElementById("netdir");
+  nd.textContent = f.net_direction||"-";
+  nd.className = "delta "+(f.net_direction==="mint"?"up":(f.net_direction==="burn"?"down":"flat"));
+  document.getElementById("unwrapAmt").textContent =
+    f.unwrap_amount ? "pending unwrap volume "+f.unwrap_amount_display.toFixed(8)+" frBTC" : "";
+
+  // ---- census ----
+  const cb=document.querySelector("#censusTbl tbody"); cb.innerHTML="";
+  Object.entries((s.census||{}).by_intent||{}).forEach(([k,v])=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td>"+k+"</td><td class='num'>"+fmt(v)+"</td>";
+    cb.appendChild(tr);
+  });
+
+  // ---- scoreboard ----
+  const hb=document.querySelector("#histTbl tbody"); hb.innerHTML="";
+  (s.history||[]).forEach(h=>{
+    const a=h.actual, sc=h.score||{};
+    const has = sc.mints_predicted!==undefined && sc.mints_predicted!==null;
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td>"+fmt(a.height)+"</td>"
+      +"<td class='num'>"+(has?fmt(sc.mints_predicted):"<span class='muted'>-</span>")+"</td>"
+      +"<td class='num'>"+fmt(a.mints)+"</td>"
+      +"<td class='num "+cls(sc.mints_error_pct)+"'>"+(has?pct(sc.mints_error_pct):"-")+"</td>"
+      +"<td class='num'>"+a.value_per_mint_display.toFixed(8)+"</td>"
+      +"<td class='num'>"+fmt(a.implied_fees_sats)+"</td>"
+      +"<td class='num'>"+fmt(a.amm_swaps)+"</td>";
+    hb.appendChild(tr);
+  });
+  const acc=s.accuracy;
+  document.getElementById("accuracy").textContent = acc
+    ? "Mint-count prediction error over "+acc.samples+" scored block(s): mean "
+      + acc.mean_mint_error_pct.toFixed(1)+"%, median "+acc.median_mint_error_pct.toFixed(1)+"%."
+    : "No scored blocks yet.";
+}
+tick(); setInterval(tick, 5000);
+</script>
+</body>
+</html>
