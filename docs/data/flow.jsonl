@@ -1,4 +1,4 @@
-{"_meta": true, "scanned_to": 964061, "scanned_from": 963857}
+{"_meta": true, "scanned_to": 964066, "scanned_from": 963857}
 {"height": 963857, "txid": "ae5309c659943ad303ba9ef4990e07d30cad9f324f0838c499b93ac63040cb38", "path": ["2:0", "32:0"], "amount_in": 3000000000, "min_out": 1826644, "deadline": 963876}
 {"height": 963862, "txid": "2bcfe76f54a7d5df842f43d8b12316edbb25ea30ea6a735bc8768ffbe306f3bf", "path": ["2:68479", "32:0"], "amount_in": 500000000000, "min_out": 63596, "deadline": 963880}
 {"height": 963863, "txid": "df38961b1d9eefd367d27b10b71b89a5bfc1b64882808cb52b94af18d5858bdb", "path": ["32:0", "2:0"], "amount_in": 20319, "min_out": 29483734, "deadline": 963882}
@@ -157,3 +157,7 @@
 {"height": 964054, "txid": "e657fbb0028ba4c07504f5bbd170001a4024473d9b6b7c5fdefdf00725701cf0", "path": ["2:0", "32:0"], "amount_in": 589000000, "min_out": 327700, "deadline": 964056}
 {"height": 964057, "txid": "2777706efbe038779faf3afd3568a17dda4084df8e5dc70b35fecae182d38df5", "path": ["2:77623", "32:0"], "amount_in": 210000000, "min_out": 99345, "deadline": 964075}
 {"height": 964057, "txid": "aa0495019129e27f6397a63e1172aad1e1985ce5021496c6b4a8401db171d858", "path": ["2:77623", "32:0"], "amount_in": 128927851, "min_out": 61015, "deadline": 964075}
+{"height": 964062, "txid": "2bacdacfa42276e431fba1d19ddb93ffb3ae218f83647bd76545323712c0d074", "path": ["2:0", "2:25720"], "amount_in": 50000000, "min_out": 1137417929599, "deadline": 964079}
+{"height": 964064, "txid": "cb019c763130983b77410b0d2093255b44a83b1e8151726e95b1eec58d3e1316", "path": ["2:69", "32:0"], "amount_in": 120000000000000000, "min_out": 71350, "deadline": 340282366920938463463374607431768211455}
+{"height": 964066, "txid": "b09157eb28f002f1e3cc207ce811c213c3c16a105ecdab37785be15b852ef91b", "path": ["2:0", "32:0"], "amount_in": 507464652, "min_out": 281727, "deadline": 964209}
+{"height": 964066, "txid": "e485449d1203b6a1aa4f7069e3e77d5f61aa6cdacf9676e4a59643edd7e47d24", "path": ["2:0", "32:0"], "amount_in": 365276128, "min_out": 202790, "deadline": 964209}
