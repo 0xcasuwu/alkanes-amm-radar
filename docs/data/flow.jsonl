@@ -1,12 +1,4 @@
-{"_meta": true, "scanned_to": 973897, "scanned_from": 973398}
-{"height": 973399, "txid": "0a783bea6d32ed634b3ac4a21685c729be6a98abc3c1f9aecba5592359beb880", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 89910, "min_out": 951870751, "deadline": 973417}
-{"height": 973401, "txid": "e0d3e61fd0232b87f71e5f84b07b91d543f1a6e4a9f52eb6eef86765f79dfcf5", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 4600000000, "min_out": 377364, "deadline": 973420}
-{"height": 973405, "txid": "492f8500dd209f7a07d70e52e443458ff50a6de51fd90f8c5aef021ad86d6608", "path": ["2:68479", "4:8888"], "amount_in": 5512144912570, "min_out": 7724404877, "deadline": 973424}
-{"height": 973407, "txid": "a25732a585f50237b90da89767ee3949da641733bd85750aec356b8860543636", "path": ["32:0", "2:0", "2:77623"], "amount_in": 17013, "min_out": 54924168, "deadline": 973426}
-{"height": 973408, "txid": "f2f5b7ddec3a74e008f60b3b7a57fe5395dd477ff56c3ba295cc501beba685c9", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 2494426271, "min_out": 206690, "deadline": 973426}
-{"height": 973409, "txid": "1ff49778f9db8ea93140cb8173711c0a9880c56aba469ea0f545e6d64f9ca46b", "path": ["4:8888", "2:68479", "32:0", "2:77623"], "amount_in": 1554782468, "min_out": 436741592, "deadline": 973428}
-{"height": 973410, "txid": "4fab7a5f58401ecb4cb6bde99e4ce2e2836eaf024a301fcd15cdcea4c3e6c149", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 47697, "min_out": 527093423, "deadline": 973429}
-{"height": 973421, "txid": "183887f855e57ee985fd8a4bbc8171b9d4d99d15fd8103dfa0927129ee68f99a", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 89910, "min_out": 950149359, "deadline": 973439}
+{"_meta": true, "scanned_to": 973937, "scanned_from": 973438}
 {"height": 973459, "txid": "5d172ddb9ee7bcf7fc254265bb9d471f96918821c225f483548b4957a05f18ed", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 89910, "min_out": 946740667, "deadline": 973478}
 {"height": 973476, "txid": "b29583ff3a4a8f2cb4478b4ba6913619ab6f8f99b00a37d4ecce60373c38694b", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 689410799, "min_out": 53803, "deadline": 973493}
 {"height": 973482, "txid": "4e87204a40453f7456baa0adca37c5f34b0ff9dcedbdd2bca1365993ea028d10", "path": ["2:0", "32:0"], "amount_in": 1500000000, "min_out": 632914, "deadline": 973501}
@@ -86,3 +78,7 @@
 {"height": 973844, "txid": "13fa5ef078c8d8eda5dc972a12fce4c86a6a84063fb883e93b7eda0a02636995", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 3000000000, "min_out": 202152, "deadline": 973850}
 {"height": 973860, "txid": "56cec3f9581fc6f188175a76f4032f60f404696c8f31677450cb5b45e8b8f630", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 69930, "min_out": 902748121, "deadline": 973869}
 {"height": 973875, "txid": "6cfb1e6ec126116a9af88ffc7d0c06744bfe150ec3b72aa70eae46b6c3ebe8b0", "path": ["2:77623", "32:0", "2:68479", "4:8888"], "amount_in": 220000000, "min_out": 901781772, "deadline": 973894}
+{"height": 973901, "txid": "89cdcd000178ac6122da10ff6508d58a5dbed2238385961dce64aa951ead7d9d", "path": ["2:77623", "32:0", "2:68479", "4:8888"], "amount_in": 150000000, "min_out": 591749668, "deadline": 973920}
+{"height": 973928, "txid": "83273ef018c708c8adcf89ece0b182c954103a4dfcc02885ce7a196c771b8dc7", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 417821231, "min_out": 28306, "deadline": 973946}
+{"height": 973929, "txid": "3a0ab305eb7a3f3e85d986c87974eae3033ffa6827913b6aa4eaecd2f96b2990", "path": ["2:68479", "32:0"], "amount_in": 4880802225839, "min_out": 556356, "deadline": 973948}
+{"height": 973929, "txid": "484c3d4d8eab8f68bfcef746875873d851124dca90f6450fd93f4bbae780e336", "path": ["2:77623", "32:0", "2:68479", "4:8888"], "amount_in": 240000000, "min_out": 955907234, "deadline": 973948}
