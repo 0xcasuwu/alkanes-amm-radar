@@ -1,5 +1,4 @@
-{"_meta": true, "scanned_to": 975591, "scanned_from": 975092}
-{"height": 975100, "txid": "af498b43cb5468fdc7a2fc91edfe6a7068d32f43c3313b16208c7da40ca3b13b", "path": ["2:490", "2:0", "2:77623", "32:0"], "amount_in": 986109920761762, "min_out": 6520, "deadline": 975118}
+{"_meta": true, "scanned_to": 975616, "scanned_from": 975117}
 {"height": 975122, "txid": "c8bc6bb84cbe5cea9e1c8783af1b5745aa6d16972bf28418c6357703660d1744", "path": ["2:16", "32:0"], "amount_in": 7995386113009, "min_out": 27342, "deadline": 975134}
 {"height": 975133, "txid": "092eb89d4fda79524bb574970c749f60f25d166f39b9b165f5de53e9db762e3f", "path": ["2:68479", "4:8888"], "amount_in": 869061493207, "min_out": 1255538522, "deadline": 975152}
 {"height": 975133, "txid": "888f185b540f54477f41311f5aaf9396d29d81db4ba9fb001509571326dc55b8", "path": ["2:68479", "32:0"], "amount_in": 455928598328, "min_out": 51192, "deadline": 975152}
