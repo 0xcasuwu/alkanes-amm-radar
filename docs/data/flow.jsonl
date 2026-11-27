@@ -1,6 +1,4 @@
-{"_meta": true, "scanned_to": 977781, "scanned_from": 977282}
-{"height": 977289, "txid": "64094cdf3c98353d647a5ee9b8983b7bdc578617a98f814738a65b1227d73eeb", "path": ["2:77623", "32:0", "2:68479", "4:8888"], "amount_in": 416475661, "min_out": 1769689923, "deadline": 977305}
-{"height": 977322, "txid": "10804945aa86586850df3310235704a072e5de1cd318fd7fff1ba169197d0be0", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 100007253, "min_out": 7715, "deadline": 977341}
+{"_meta": true, "scanned_to": 977832, "scanned_from": 977333}
 {"height": 977338, "txid": "f18f8da73c446d35e8b15d936773d3f62bc3d5a7b36cae37653b40b0bcd3a1d9", "path": ["2:77623", "32:0"], "amount_in": 400000000, "min_out": 143694, "deadline": 340282366920938463463374607431768211455}
 {"height": 977347, "txid": "25f8fe6c09affb0298c80e593c636a6cae1ef805fe06aa07459645eb2d83f53f", "path": ["2:68479", "32:0"], "amount_in": 20807644897557, "min_out": 2426482, "deadline": 977366}
 {"height": 977385, "txid": "de3ecfa805817872591a2f462d0a9b99979c7cfca24945a6da6af58c8aa9b35f", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 81918, "min_out": 883597731, "deadline": 977401}
@@ -18,3 +16,5 @@
 {"height": 977753, "txid": "c0615e7daa8e36f28299a087c46344de7599157181142c53107dc470caac69a2", "path": ["2:68479", "32:0"], "amount_in": 2501210599852, "min_out": 290756, "deadline": 977772}
 {"height": 977758, "txid": "b138ce122274eba8562e7b2e40496027f37a8655d1f0d8469109787cfded0c81", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 1700013068, "min_out": 134340, "deadline": 977777}
 {"height": 977761, "txid": "60a9c9c616cda7752d4aa7b4ea35ff0c1269509822377270cbc4166e5f03abad", "path": ["32:0", "2:68479", "4:8888"], "amount_in": 89910, "min_out": 987535557, "deadline": 977780}
+{"height": 977794, "txid": "c349511687d90e0424e59cf0f958caa03c57b394172d14906d0dbfc6db055f49", "path": ["2:68479", "32:0"], "amount_in": 736570343846, "min_out": 83745, "deadline": 977813}
+{"height": 977818, "txid": "d773f2b655de99f6faedd5ae1d3dc4403d7e76703012b9d8ffe986017f9de65e", "path": ["4:8888", "2:68479", "32:0"], "amount_in": 9000000000, "min_out": 702301, "deadline": 977835}
